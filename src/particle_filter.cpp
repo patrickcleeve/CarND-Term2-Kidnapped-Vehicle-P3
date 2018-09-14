@@ -108,6 +108,13 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
 
+
+
+
+
+
+
+
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
@@ -155,16 +162,95 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 		particles[i].weight = 1.0;
 
+		//cout << map_landmarks.landmark_list[0] << endl;
+
 		for (int k = 0; k < trans_observations.size(); k++) {
 
-				// For each transformed observation need to set closest landmark association
+			// For each transformed observation need to set closest landmark association
 
 
+
+			// for each landmark, loop through, check distance
+			// assoicate closest observation dist(), with landmark
+
+
+			// Really slow, have to loop through each landmark for each observation.
+			// N(mn) m=n_observations, n=n_landmarks
+			
+			int association;
+
+			double meas_x = trans_observations[k].x;
+			double meas_y = trans_observations[k].y;
+				
+
+			double closest_dist = 1000;
+
+			for (int m=0; m < map_landmarks.landmark_list.size(); m++) {
+
+				//Map::single_landmark_s landmark;
+
+				//landmark =  map_landmarks.landmark_list[m];
+
+
+				float landmark_x = map_landmarks.landmark_list[m].x_f;
+				float landmark_y = map_landmarks.landmark_list[m].y_f;
+				
+				double calc_dist = dist(meas_x, meas_y, landmark_x, landmark_y);
+
+
+				// If observation is closer to landmark, update distance and add association
+				if (calc_dist < closest_dist) {
+
+					closest_dist = calc_dist;
+					association = m;
+
+				}
+
+
+				//cout << "Closest Dist: " << closest_dist << endl;
+				//cout << calc_dist << closest_dist << endl;
+
+				//cout << landmark_x << endl;;
+
+
+			}
+
+
+			
+			// If particle has an associated landmark, update particle weight based on probability
+			if (association != 0) {
+
+				double meas_x = trans_observations[k].x;
+				double meas_y = trans_observations[k].y;
+
+				double mu_x = map_landmarks.landmark_list[association].x_f;
+				double mu_y = map_landmarks.landmark_list[association].y_f;
+
+				long double multipler = 1 / (2 * M_PI * std_landmark[0] * std_landmark[1]) * 
+				exp(- (pow(meas_x - mu_x, 2) / (2 * std_landmark[0] * std_landmark[0]) + 
+					pow(meas_y - mu_y, 2) / (2 * std_landmark[1] * std_landmark[1])));
+				
+
+				if (multipler > 0) {
+	
+					particles[i].weight *= multipler;
+
+				}
+
+			}
+
+			associations.push_back(association+1);
+			sense_x.push_back(trans_observations[k].x);
+			sense_y.push_back(trans_observations[k].y);
+			 
 
 
 		}
 
-
+		//dataAssociation(particles, trans_observations) 
+		particles[i].associations = associations;
+		particles[i].sense_x = sense_x;
+		particles[i].sense_y = sense_y;
 
 
 
